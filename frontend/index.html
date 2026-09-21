@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Mini Video Editor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/editor.css?v=20260920-5" />
+</head>
+<body>
+  <div id="appShell" class="app-shell">
+    <header class="topbar">
+      <div class="brand"><i class="bi bi-stars"></i><span>FrameSync AI</span><small>Mini Video Editor</small></div>
+      <div class="project-title-wrap">
+        <input id="projectName" class="project-name" value="Untitled Project" />
+        <span id="saveState" class="save-state">Saved</span>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-sm btn-outline-light" id="undoBtn" title="Undo perubahan terakhir (Ctrl+Z)" aria-label="Undo perubahan terakhir"><i class="bi bi-arrow-counterclockwise"></i></button>
+        <button class="btn btn-sm btn-outline-light" id="redoBtn" title="Redo perubahan terakhir (Ctrl+Y)" aria-label="Redo perubahan terakhir"><i class="bi bi-arrow-clockwise"></i></button>
+        <button class="btn btn-sm btn-outline-light" id="saveBtn"><i class="bi bi-floppy"></i> Save</button>
+        <label class="language-select-wrap" title="Pilih bahasa yang digunakan dalam voice dan naskah agar transkripsi serta pencocokan image lebih akurat.">
+          <span>Bahasa</span>
+          <select id="narrationLanguage" class="form-select form-select-sm">
+            <option value="id" selected>Indonesia</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ko">한국어</option>
+          </select>
+        </label>
+        <label class="sync-duration-wrap" title="Auto uses narration duration and image count. Manual values set an approximate maximum scene duration.">
+          <span>Scene</span>
+          <select id="autoSyncDuration" class="form-select form-select-sm">
+            <option value="auto" selected>Auto</option>
+            <option value="4">4s</option><option value="6">6s</option>
+            <option value="8">8s</option><option value="10">10s</option><option value="15">15s</option>
+          </select>
+        </label>
+        <button class="btn btn-sm btn-info" id="autoSyncBtn"><i class="bi bi-magic"></i> <span class="label-desktop">Analyze & Auto Sync</span><span class="label-mobile">Sync</span></button>
+        <button class="btn btn-sm btn-outline-danger" id="reviewLowBtn" title="Jump to next LOW confidence scene"><i class="bi bi-exclamation-triangle"></i> <span class="label-desktop">Review LOW</span><span id="reviewLowCount">0</span></button>
+        <button class="btn btn-sm btn-outline-warning" id="autoCaptionBtn" title="Generate captions. Shift-click to transcribe again."><i class="bi bi-badge-cc"></i> <span class="label-desktop">Auto Caption</span><span class="label-mobile">Caption</span></button>
+        <button class="btn btn-sm btn-outline-light" id="captionManagerBtn" title="Edit, cari, split, merge, serta import/export caption"><i class="bi bi-card-text"></i> <span class="label-desktop">Caption Manager</span><span class="label-mobile">Edit CC</span></button>
+        <label class="form-check form-switch caption-toggle" title="Show captions in preview and rendered video">
+          <input id="captionEnabledToggle" class="form-check-input" type="checkbox" disabled>
+          <span>Caption aktif</span>
+        </label>
+        <button class="btn btn-sm btn-primary" id="renderBtn"><i class="bi bi-box-arrow-up-right"></i> Render</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="left-panel panel">
+        <ul class="nav nav-tabs small" role="tablist">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#assetsTab">Assets</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#scenesTab">Scenes</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#projectsTab">Projects</button></li>
+        </ul>
+        <div class="tab-content panel-content">
+          <section id="assetsTab" class="tab-pane fade show active">
+            <div class="asset-toolbar">
+              <div class="btn-group btn-group-sm w-100" role="group">
+                <button class="btn btn-outline-secondary active asset-filter" data-kind="images">Images</button>
+                <button class="btn btn-outline-secondary asset-filter" data-kind="audio">Audio</button>
+                <button class="btn btn-outline-secondary asset-filter" data-kind="music">Music</button>
+                <button class="btn btn-outline-secondary asset-filter" data-kind="intro">Intro</button>
+              </div>
+              <input id="assetSearch" class="form-control form-control-sm mt-2" placeholder="Search filename, prompt, description...">
+              <div class="asset-organizer-controls mt-2">
+                <select id="assetFolderFilter" class="form-select form-select-sm" title="Filter folder aset"><option value="">Semua folder</option></select>
+                <label class="form-check form-switch mb-0" title="Tampilkan hanya aset yang belum dipakai di timeline"><input id="assetUnusedOnly" class="form-check-input" type="checkbox"><span class="small">Belum dipakai</span></label>
+              </div>
+              <button id="uploadAssetBtn" class="btn btn-sm btn-outline-info w-100 mt-2"><i class="bi bi-upload"></i> Upload Assets</button>
+              <input id="assetInput" type="file" multiple hidden>
+              <div id="audioModeControls" class="audio-mode-controls d-none">
+                <strong>Voice Sequence</strong>
+                <small id="audioModeHint">Semua voice diputar berurutan. Geser kartu untuk mengubah urutannya.</small>
+              </div>
+              <small id="imageOrderHint" class="image-order-hint">Drag image cards to set story order. Click the expand icon for a large preview.</small>
+              <small id="introHint" class="image-order-hint d-none">Satu video intro di awal beserta suara aslinya. Upload baru mengganti intro lama dan menggeser seluruh timeline.</small>
+            </div>
+            <div id="assetGrid" class="asset-grid"></div>
+          </section>
+          <section id="scenesTab" class="tab-pane fade">
+            <div id="sceneList" class="scene-list"></div>
+          </section>
+          <section id="projectsTab" class="tab-pane fade">
+            <button id="newProjectBtn" class="btn btn-sm btn-primary w-100 mb-2"><i class="bi bi-plus"></i> New Project</button>
+            <div id="recentProjects" class="recent-projects"></div>
+          </section>
+        </div>
+      </aside>
+
+      <section class="preview-panel panel">
+        <div class="panel-title preview-title">
+          <span>Preview <span id="previewBadge" class="badge text-bg-secondary">No clip</span></span>
+          <label class="canvas-size-control" for="canvasResolution"><span>Canvas</span><select id="canvasResolution" class="form-select form-select-sm" aria-label="Canvas size"></select></label>
+        </div>
+        <div id="previewCanvasWrap" class="preview-canvas-wrap">
+          <div id="previewStage" class="preview-stage fit-cover">
+            <img id="previewImage" alt="preview" draggable="false" />
+            <video id="previewVideo" playsinline preload="metadata"></video>
+            <div id="previewBlurBg" class="preview-blur-bg"></div>
+            <div id="textOverlayLayer" class="text-overlay-layer"></div>
+            <div id="emptyPreview" class="empty-preview"><i class="bi bi-play-btn"></i><p>Upload narration + images, then run Auto Sync.</p></div>
+          </div>
+        </div>
+        <div class="preview-controls">
+          <button id="prevSceneBtn" class="transport" title="Ke scene sebelumnya" aria-label="Ke scene sebelumnya"><i class="bi bi-skip-backward-fill"></i></button>
+          <button id="playPauseBtn" class="transport transport-primary" title="Putar atau jeda preview" aria-label="Putar atau jeda preview"><i class="bi bi-play-fill"></i></button>
+          <button id="nextSceneBtn" class="transport" title="Ke scene berikutnya" aria-label="Ke scene berikutnya"><i class="bi bi-skip-forward-fill"></i></button>
+          <button id="prevFrameBtn" class="transport" title="Mundur satu frame" aria-label="Mundur satu frame"><i class="bi bi-skip-start"></i></button>
+          <button id="nextFrameBtn" class="transport" title="Maju satu frame" aria-label="Maju satu frame"><i class="bi bi-skip-end"></i></button>
+          <span id="timeDisplay" class="time-display">00:00.00 / 00:00.00</span>
+          <label class="playback-speed-control" title="Kecepatan playback"><span>Speed</span><select id="playbackSpeed" class="form-select form-select-sm" aria-label="Kecepatan playback"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+          <button id="loopInBtn" class="transport" title="Set awal loop (I)">I</button>
+          <button id="loopOutBtn" class="transport" title="Set akhir loop (O)">O</button>
+          <button id="loopToggleBtn" class="transport" title="Aktif/nonaktif loop area" aria-label="Aktif/nonaktif loop"><i class="bi bi-repeat"></i></button>
+          <button id="addMarkerBtn" class="transport" title="Tambah marker di playhead (M)" aria-label="Tambah marker"><i class="bi bi-bookmark-plus"></i></button>
+          <label class="preview-volume-control" title="Volume seluruh preview"><i class="bi bi-volume-up"></i><input id="masterVolume" class="form-range volume-range" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume seluruh preview"></label>
+          <button id="fullscreenBtn" class="transport" title="Preview layar penuh" aria-label="Preview layar penuh"><i class="bi bi-arrows-fullscreen"></i></button>
+        </div>
+        <audio id="masterAudio" preload="metadata"></audio>
+      </section>
+
+      <aside class="right-panel panel">
+        <div class="panel-title">Inspector</div>
+        <div id="inspectorEmpty" class="inspector-empty">Select a clip to edit its properties.</div>
+        <div id="inspector" class="inspector d-none">
+          <div class="inspector-section">
+            <label>Filename</label><div id="insFilename" class="readonly-value"></div>
+            <div id="manualEditStatus" class="manual-edit-status"></div>
+            <div id="visualSourceWrap" class="mt-2">
+              <label for="insVisualSource">Sumber visual</label>
+              <select id="insVisualSource" class="form-select form-select-sm"></select>
+            </div>
+            <div class="row g-2 mt-1">
+              <div class="col-4"><label>Start</label><input id="insStart" class="form-control form-control-sm" type="number" step="0.01"></div>
+              <div class="col-4"><label>End</label><input id="insEnd" class="form-control form-control-sm" type="number" step="0.01"></div>
+              <div class="col-4"><label>Duration</label><input id="insDuration" class="form-control form-control-sm" type="number" step="0.01"></div>
+            </div>
+            <div class="manual-time-actions mt-2">
+              <button id="setStartBtn" type="button" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-in-right"></i> Start = playhead</button>
+              <button id="setEndBtn" type="button" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-right"></i> End = playhead</button>
+            </div>
+            <small id="manualTimingHint" class="manual-timing-hint">Timing otomatis dibatasi agar scene tidak overlap.</small>
+          </div>
+          <div class="inspector-section" id="imageInspector">
+            <label>Motion</label>
+            <select id="insMotion" class="form-select form-select-sm">
+              <option value="static">Static</option><option value="zoom_in">Zoom In</option><option value="zoom_out">Zoom Out</option>
+              <option value="pan_left">Pan Left</option><option value="pan_right">Pan Right</option><option value="pan_up">Pan Up</option>
+              <option value="pan_down">Pan Down</option><option value="ken_burns">Ken Burns</option><option value="random_cinematic">Random Cinematic</option>
+            </select>
+            <label class="mt-2">Motion Speed</label>
+            <select id="insMotionSpeed" class="form-select form-select-sm"><option>subtle</option><option>slow</option><option>normal</option><option>fast</option></select>
+            <div class="row g-2 mt-1">
+              <div class="col-4"><label>Scale</label><input id="insScale" class="form-control form-control-sm" type="number" step="0.01" min="0.1" value="1"></div>
+              <div class="col-4"><label>Pos X</label><input id="insPosX" class="form-control form-control-sm" type="number" step="1"></div>
+              <div class="col-4"><label>Pos Y</label><input id="insPosY" class="form-control form-control-sm" type="number" step="1"></div>
+            </div>
+            <label class="mt-2">Crop % (Top / Right / Bottom / Left)</label>
+            <div class="row g-1">
+              <div class="col-3"><input id="insCropTop" class="form-control form-control-sm" type="number" min="0" max="40" step="1" value="0"></div>
+              <div class="col-3"><input id="insCropRight" class="form-control form-control-sm" type="number" min="0" max="40" step="1" value="0"></div>
+              <div class="col-3"><input id="insCropBottom" class="form-control form-control-sm" type="number" min="0" max="40" step="1" value="0"></div>
+              <div class="col-3"><input id="insCropLeft" class="form-control form-control-sm" type="number" min="0" max="40" step="1" value="0"></div>
+            </div>
+            <label class="mt-2">Fit Mode</label>
+            <select id="insFit" class="form-select form-select-sm"><option value="cover">Cover</option><option value="contain">Contain</option><option value="blur_background">Blur Background</option></select>
+            <label class="mt-2">Transition</label>
+            <select id="insTransition" class="form-select form-select-sm"><option value="none">None</option><option value="motion_dissolve">Motion Dissolve</option><option value="crossfade">Crossfade</option><option value="fade">Fade</option><option value="dissolve">Dissolve</option><option value="slide_left">Slide Left</option><option value="slide_right">Slide Right</option><option value="zoom">Zoom</option></select>
+          </div>
+          <div class="inspector-section" id="subtitleInspector">
+            <label id="textContentLabel">Caption Text</label><textarea id="insSubtitleText" class="form-control form-control-sm" rows="4"></textarea>
+            <div class="row g-2 mt-1"><div class="col-6"><label>Font Size</label><input id="insSubtitleSize" class="form-control form-control-sm" type="number" min="5" max="120" value="42"></div><div class="col-6"><label>Position</label><select id="insSubtitlePosition" class="form-select form-select-sm"><option value="top">Top</option><option value="center">Center</option><option value="bottom" selected>Bottom</option></select></div></div>
+            <label class="mt-2" for="insTextFont">Font</label>
+            <select id="insTextFont" class="form-select form-select-sm">
+              <option value="Arial">Arial</option><option value="Verdana">Verdana</option><option value="Trebuchet MS">Trebuchet MS</option>
+              <option value="Georgia">Georgia</option><option value="Impact">Impact</option><option value="Courier New">Courier New</option>
+            </select>
+            <div class="row g-2 mt-1"><div class="col-6"><label>Pos X</label><input id="insTextPosX" class="form-control form-control-sm" type="number" min="-50" max="50" step="1" value="0"></div><div class="col-6"><label>Pos Y</label><input id="insTextPosY" class="form-control form-control-sm" type="number" min="-50" max="50" step="1" value="0"></div></div>
+            <label id="textStyleLabel" class="mt-2">Caption Style</label>
+            <div class="caption-style-grid" id="captionStyleGrid">
+              <button type="button" class="caption-style-card style-classic" data-caption-style="classic"><span>Simple caption</span><small>Classic</small></button>
+              <button type="button" class="caption-style-card style-impact" data-caption-style="impact"><span>BIG IMPACT</span><small>Impact</small></button>
+              <button type="button" class="caption-style-card style-minimal" data-caption-style="minimal"><span>Clean subtitle</span><small>Minimal</small></button>
+              <button type="button" class="caption-style-card style-karaoke" data-caption-style="karaoke"><span>Sing along</span><small>Karaoke</small></button>
+              <button type="button" class="caption-style-card style-news" data-caption-style="news"><span>Breaking story</span><small>News</small></button>
+            </div>
+            <button type="button" id="applyCaptionStyleAll" class="btn btn-sm btn-outline-secondary w-100 mt-2">Apply style to all captions</button>
+          </div>
+          <div class="inspector-section d-none" id="audioInspector">
+            <label>Volume</label><input id="insVolume" class="form-range" type="range" min="0" max="2" step="0.01" value="1">
+            <div class="row g-2">
+              <div class="col-6"><label>Fade In</label><input id="insFadeIn" class="form-control form-control-sm" type="number" min="0" step="0.1" value="0"></div>
+              <div class="col-6"><label>Fade Out</label><input id="insFadeOut" class="form-control form-control-sm" type="number" min="0" step="0.1" value="0"></div>
+            </div>
+            <div id="duckingWrap" class="form-check form-switch mt-2 d-none"><input id="insDucking" class="form-check-input" type="checkbox"><label class="form-check-label">Auto Ducking</label></div>
+          </div>
+          <div class="inspector-section" id="aiInspector">
+            <div class="metric-row"><span>AI Confidence</span><strong id="insScore">—</strong></div>
+            <div class="metric-row"><span>Confidence Level</span><strong id="insConfidence">—</strong></div>
+            <div class="metric-row"><span>Direct Visual · 40%</span><strong id="insVisualScore">—</strong></div>
+            <div class="metric-row"><span>Image Caption · 30%</span><strong id="insCaptionScore">—</strong></div>
+            <div class="metric-row"><span>Keyword · 15%</span><strong id="insKeywordScore">—</strong></div>
+            <div class="metric-row"><span>Timeline · 15%</span><strong id="insTimelineScore">—</strong></div>
+            <div class="metric-row"><span>Final Match</span><strong id="insFinalScore">—</strong></div>
+            <div class="metric-row"><span>Image Understanding</span><strong id="insCaptionModel">—</strong></div>
+            <div class="small text-secondary mt-1" id="insImageCaption"></div>
+            <div class="metric-row"><span>Global Optimizer</span><strong id="insGlobalScore">—</strong></div>
+            <div class="selection-reasons mt-2">
+              <div><span>Caption cocok</span><strong id="insReasonCaption">—</strong></div>
+              <div><span>Aksi/frasa cocok</span><strong id="insReasonAction">—</strong></div>
+              <div><span>Alternatif terdekat</span><strong id="insReasonAlternative">—</strong></div>
+              <div><span>Pengaruh urutan</span><strong id="insReasonTimeline">—</strong></div>
+              <div><span>Kesepakatan visual/caption</span><strong id="insReasonAgreement">—</strong></div>
+            </div>
+            <div class="form-check form-switch mt-2"><input id="insLock" class="form-check-input" type="checkbox"><label class="form-check-label" for="insLock">Lock clip</label></div>
+            <div class="form-check form-switch"><input id="insManual" class="form-check-input" type="checkbox"><label class="form-check-label" for="insManual">Manual override</label></div>
+          </div>
+          <div class="inspector-section">
+            <div class="d-flex gap-2"><button id="replaceBtn" class="btn btn-sm btn-outline-info flex-fill">Replace</button><button id="duplicateBtn" class="btn btn-sm btn-outline-secondary flex-fill">Duplicate</button></div>
+            <div class="d-flex gap-2 mt-2"><button id="splitBtn" class="btn btn-sm btn-outline-warning flex-fill">Split</button><button id="deleteBtn" class="btn btn-sm btn-outline-danger flex-fill">Delete</button></div>
+            <button id="saveClipBtn" class="btn btn-sm btn-primary w-100 mt-2"><i class="bi bi-check2-circle"></i> Simpan edit manual</button>
+          </div>
+          <div class="inspector-section" id="suggestionsInspector">
+            <h6>AI Suggestions</h6>
+            <div id="suggestionList"></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <section class="timeline-panel panel">
+      <div class="timeline-toolbar">
+        <div class="d-flex gap-2 align-items-center">
+          <button id="addMusicBtn" class="btn btn-sm btn-outline-secondary" title="Pilih atau upload musik untuk timeline"><i class="bi bi-music-note-beamed"></i> Add Music</button>
+          <button id="splitToolbarBtn" class="btn btn-sm btn-outline-secondary" title="Potong clip terpilih pada playhead"><i class="bi bi-scissors"></i> Split</button>
+          <button id="copyClipsBtn" class="btn btn-sm btn-outline-secondary" title="Copy clip terpilih (Ctrl+C)" aria-label="Copy clip terpilih"><i class="bi bi-copy"></i></button>
+          <button id="pasteClipsBtn" class="btn btn-sm btn-outline-secondary" title="Paste clip pada posisi playhead (Ctrl+V)" aria-label="Paste clip pada posisi playhead"><i class="bi bi-clipboard-plus"></i></button>
+          <div class="dropdown">
+            <button id="addTrackBtn" class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tambah track visual, audio, atau text"><i class="bi bi-plus-lg"></i> Add Track</button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+              <li><button class="dropdown-item" type="button" data-add-track="image"><i class="bi bi-image me-2"></i>Image</button></li>
+              <li><button class="dropdown-item" type="button" data-add-track="audio"><i class="bi bi-volume-up me-2"></i>Audio</button></li>
+              <li><button class="dropdown-item" type="button" data-add-track="text"><i class="bi bi-fonts me-2"></i>Text</button></li>
+            </ul>
+          </div>
+          <button id="addTextBtn" class="btn btn-sm btn-outline-secondary" title="Tambah text overlay baru pada posisi playhead"><i class="bi bi-type"></i> Add Text</button>
+          <div class="form-check form-switch mb-0" title="Geser clip berikutnya otomatis saat paste atau delete"><input id="rippleToggle" class="form-check-input" type="checkbox"><label class="form-check-label small" for="rippleToggle">Ripple</label></div>
+          <div class="form-check form-switch mb-0" title="Tempelkan posisi clip ke playhead dan batas clip terdekat"><input id="snapToggle" class="form-check-input" checked type="checkbox"><label class="form-check-label small" for="snapToggle">Snap</label></div>
+        </div>
+        <div class="zoom-controls">
+          <button id="zoomOutBtn" class="btn btn-sm btn-outline-secondary" title="Perkecil timeline" aria-label="Perkecil timeline"><i class="bi bi-dash-lg"></i></button>
+          <input id="zoomSlider" type="range" min="25" max="400" value="100" step="25" title="Zoom timeline" aria-label="Zoom timeline">
+          <span id="zoomLabel">100%</span>
+          <button id="zoomInBtn" class="btn btn-sm btn-outline-secondary" title="Perbesar timeline" aria-label="Perbesar timeline"><i class="bi bi-plus-lg"></i></button>
+          <button id="fitTimelineBtn" class="btn btn-sm btn-outline-secondary" title="Tampilkan seluruh durasi timeline">Fit Timeline</button>
+        </div>
+      </div>
+      <div id="timelineScroll" class="timeline-scroll">
+        <div id="timelineCanvas" class="timeline-canvas">
+          <div id="trackLabels" class="track-labels"><div class="ruler-label"></div></div>
+          <div id="timelineContent" class="timeline-content">
+            <div id="ruler" class="ruler"></div>
+            <div id="playhead" class="playhead"><div class="playhead-head"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="contextMenu" class="context-menu d-none">
+    <button data-action="split">Split</button><button data-action="duplicate">Duplicate</button><button data-action="replace">Replace Image</button><button data-action="lock">Lock / Unlock</button><button data-action="resetMotion">Reset Motion</button><button data-action="resetTransition">Reset Transition</button><button data-action="delete">Delete</button>
+  </div>
+
+  <div class="modal fade" id="captionManagerModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content editor-modal">
+    <div class="modal-header"><div><h5 class="modal-title">Caption Manager</h5><small class="text-secondary">Caption otomatis/subtitle. Text Overlay tetap terpisah.</small></div><button class="btn-close btn-close-white" data-bs-dismiss="modal" title="Tutup" aria-label="Tutup"></button></div>
+    <div class="modal-body">
+      <div class="caption-manager-toolbar">
+        <input id="captionSearch" class="form-control form-control-sm" placeholder="Cari kata dalam caption...">
+        <button id="importSrtBtn" class="btn btn-sm btn-outline-info"><i class="bi bi-upload"></i> Import .srt</button>
+        <input id="srtInput" type="file" accept=".srt,application/x-subrip,text/plain" hidden>
+        <button id="exportSrtBtn" class="btn btn-sm btn-outline-info"><i class="bi bi-download"></i> Export .srt</button>
+      </div>
+      <div id="captionManagerList" class="caption-manager-list"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button><button id="saveCaptionsBtn" class="btn btn-primary"><i class="bi bi-floppy"></i> Simpan Semua</button></div>
+  </div></div></div>
+
+  <div class="modal fade" id="assetOrganizerModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content editor-modal">
+    <div class="modal-header"><h5 class="modal-title">Atur Aset</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal" title="Tutup" aria-label="Tutup"></button></div>
+    <div class="modal-body"><div id="assetOrganizerName" class="mb-3 fw-semibold"></div><label for="assetFolder">Folder</label><input id="assetFolder" class="form-control mb-3" placeholder="Contoh: Scene pembuka"><label for="assetTags">Tag</label><input id="assetTags" class="form-control mb-3" placeholder="Pisahkan dengan koma"><label for="assetColor">Warna label</label><input id="assetColor" class="form-control form-control-color" type="color" value="#5b8def"></div>
+    <div class="modal-footer"><button id="duplicateAssetBtn" class="btn btn-outline-info"><i class="bi bi-copy"></i> Duplikat</button><button id="saveAssetOrganizerBtn" class="btn btn-primary">Simpan</button></div>
+  </div></div></div>
+
+  <div class="modal fade" id="autoSyncConflictModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content editor-modal">
+    <div class="modal-header"><h5 class="modal-title">Auto Sync Timeline Lama</h5></div>
+    <div class="modal-body">
+      <p class="mb-2">Timeline sudah memiliki scene. Pilih cara menjalankan Auto Sync:</p>
+      <div id="syncChoiceHint" class="small text-secondary"><strong>Hanya voice baru</strong> mempertahankan timeline lama dan menambahkan voice beserta image batch baru setelahnya. <strong>Override semua</strong> membuat ulang seluruh timeline.</div>
+    </div>
+    <div class="modal-footer">
+      <button id="syncReplaceAllBtn" class="btn btn-outline-danger">Override Semua</button>
+      <button id="syncNewVoiceBtn" class="btn btn-primary">Hanya Voice Baru</button>
+    </div>
+  </div></div></div>
+
+  <div class="modal fade" id="aiSetupModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content editor-modal">
+    <div class="modal-header"><h5 class="modal-title"><i class="bi bi-cpu"></i> Menyiapkan AI Lokal</h5></div>
+    <div class="modal-body">
+      <p id="aiSetupMessage" class="mb-2">Model AI disiapkan satu per satu agar aman untuk RAM 8 GB.</p>
+      <div class="progress mb-3"><div id="aiSetupProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%">0%</div></div>
+      <div id="aiSetupModels" class="ai-setup-models"></div>
+      <div id="aiSetupError" class="alert alert-danger mt-3 mb-0 d-none"></div>
+      <div class="small text-secondary mt-3">Download hanya diperlukan sekali. Caption, embedding, dan transcript berikutnya memakai cache berdasarkan isi file dan versi model.</div>
+    </div>
+    <div id="aiSetupActions" class="modal-footer d-none">
+      <button id="aiSetupLimitedBtn" class="btn btn-outline-warning">Lanjut Mode Terbatas</button>
+      <button id="aiSetupRetryBtn" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> Coba Lagi</button>
+    </div>
+  </div></div></div>
+
+  <div class="modal fade" id="renderModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content editor-modal">
+    <div class="modal-header"><h5 class="modal-title">Render Final Video</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal" title="Tutup" aria-label="Tutup"></button></div>
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-6"><label>Canvas Resolution</label><select id="renderResolution" class="form-select"></select><small class="text-secondary">Also updates the preview canvas.</small></div>
+        <div class="col-6"><label>FPS</label><select id="renderFps" class="form-select"><option>24</option><option>25</option><option selected>30</option><option>60</option></select></div>
+        <div class="col-6"><label>Encoder</label><select id="renderEncoder" class="form-select"><option value="h264">H.264</option><option value="h265">H.265</option></select></div>
+        <div class="col-6"><label>Quality</label><select id="renderQuality" class="form-select"><option>Draft</option><option selected>Standard</option><option>High</option><option>YouTube</option></select></div>
+      </div>
+      <div id="renderProgressWrap" class="mt-4 d-none">
+        <div class="d-flex justify-content-between"><span id="renderStatusText">Rendering...</span><strong id="renderPct">0%</strong></div>
+        <div class="progress mt-2"><div id="renderProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div></div>
+        <div id="renderTimeInfo" class="small text-secondary mt-2"></div>
+        <a id="renderOutputLink" class="btn btn-success w-100 mt-3 d-none" target="_blank">Open Rendered Video</a>
+      </div>
+      <div class="render-history mt-4"><div class="d-flex justify-content-between align-items-center"><strong>Riwayat Render</strong><small class="text-secondary">Per project</small></div><div id="renderHistoryList" class="render-history-list mt-2"></div></div>
+    </div>
+    <div class="modal-footer"><button id="cancelRenderBtn" class="btn btn-outline-danger d-none">Cancel Render</button><button id="startRenderBtn" class="btn btn-primary">Start Render</button></div>
+  </div></div></div>
+
+  <div id="imagePreviewModal" class="modal fade" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content editor-modal">
+    <div class="modal-header"><h5 id="imagePreviewTitle" class="modal-title">Image Preview</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal" title="Tutup" aria-label="Tutup"></button></div>
+    <div class="modal-body image-preview-body">
+      <div class="image-preview-canvas"><img id="imagePreviewLarge" src="" alt="Image preview"></div>
+      <div class="image-scene-editor">
+        <label for="imageUserDescription">Deskripsi foto</label>
+        <textarea id="imageUserDescription" class="form-control" rows="4" maxlength="1200" placeholder="Contoh: Dayang Sumbi sedang memasak ramuan di dapur pada malam hari."></textarea>
+        <small>Deskripsi ini lebih kuat daripada caption AI saat Auto Sync.</small>
+        <label for="imageSyncCues">Kata/frasa wajib</label>
+        <input id="imageSyncCues" class="form-control" maxlength="600" placeholder="Contoh: Dayang Sumbi memasak, memasak ramuan">
+        <small>Pisahkan dengan koma. Jika kalimat narasi cocok, image ini dikunci ke adegan tersebut.</small>
+        <label for="imageAiCaption">Pemahaman AI</label>
+        <textarea id="imageAiCaption" class="form-control" rows="4" readonly></textarea>
+      </div>
+    </div>
+    <div class="modal-footer"><button id="reanalyzeImageBtn" class="btn btn-outline-info"><i class="bi bi-stars"></i> Analisis ulang image</button><button id="saveImageMetadataBtn" class="btn btn-primary"><i class="bi bi-floppy"></i> Simpan pemahaman image</button></div>
+  </div></div></div>
+
+  <div id="toast" class="toast-box"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+  <script src="/static/js/editor.js?v=20260920-5"></script>
+</body>
+</html>
