@@ -1,0 +1,91 @@
+LISENSI KOMERSIAL PROPRIETARI FRAMESYNC AI
+Versi 1.0 — 20 September 2026
+
+PEMBERI LISENSI
+Nama: FJR Solution
+Kontak: fjrsolution@gmail.com
+
+Dengan mengunduh, memasang, menjalankan, atau menggunakan FrameSync AI
+("Perangkat Lunak"), Anda menyetujui ketentuan lisensi ini. Jika Anda tidak
+menyetujui seluruh ketentuan, jangan gunakan Perangkat Lunak.
+
+1. HAK CIPTA DAN KEPEMILIKAN
+
+Perangkat Lunak, dokumentasi, desain, kode, nama, dan materi terkait adalah
+milik Pemberi Lisensi atau pemberi lisensinya dan dilindungi oleh hukum hak
+cipta serta hukum kekayaan intelektual yang berlaku. Perangkat Lunak diberikan
+berdasarkan lisensi, bukan dijual atau dialihkan kepemilikannya.
+
+2. HAK PENGGUNAAN
+
+Setelah pembayaran yang sah, Pemberi Lisensi memberi Anda lisensi terbatas,
+non-eksklusif, tidak dapat dialihkan, dan tidak dapat disublisensikan untuk
+memasang dan menggunakan satu salinan Perangkat Lunak pada perangkat milik
+Anda atau organisasi Anda. Lisensi ini bersifat berlaku terus selama Anda
+mematuhi ketentuan ini.
+
+Anda boleh menggunakan Perangkat Lunak untuk kegiatan pribadi maupun komersial,
+termasuk membuat, mengedit, merender, dan menjual hasil video yang Anda buat.
+Hak atas materi input dan hasil video Anda tetap tunduk pada hak dan izin yang
+Anda miliki atas materi tersebut.
+
+3. PEMBATASAN
+
+Tanpa persetujuan tertulis dari Pemberi Lisensi, Anda dilarang:
+
+- menyalin, membagikan, mengunggah, menjual kembali, menyewakan, meminjamkan,
+  mengalihkan, atau menyediakan Perangkat Lunak kepada pihak lain;
+- menjual atau mendistribusikan ulang Perangkat Lunak sebagai produk, layanan,
+  template, atau bagian dari paket lain;
+- memodifikasi, menerjemahkan, membuat karya turunan, menghapus pemberitahuan
+  hak cipta, atau mengubah mekanisme Perangkat Lunak;
+- melakukan reverse engineering, dekompilasi, disassembly, atau upaya
+  memperoleh kembali kode sumber, kecuali sejauh tindakan tersebut secara tegas
+  tidak dapat dilarang oleh hukum yang berlaku;
+- menggunakan Perangkat Lunak untuk melanggar hukum, hak kekayaan intelektual,
+  privasi, atau hak pihak lain.
+
+4. KOMPONEN PIHAK KETIGA
+
+Perangkat Lunak dapat menggunakan komponen pihak ketiga yang tunduk pada
+lisensinya masing-masing. Lisensi ini tidak mengubah atau membatasi hak yang
+diberikan oleh lisensi komponen pihak ketiga tersebut.
+
+5. PEMBARUAN DAN DUKUNGAN
+
+Kecuali disepakati tertulis secara terpisah, pembelian tidak menjamin pembaruan,
+dukungan teknis, kompatibilitas untuk versi sistem operasi mendatang, atau
+penyediaan layanan online.
+
+6. PENAFIAN DAN BATAS TANGGUNG JAWAB
+
+Sejauh diizinkan oleh hukum yang berlaku, Perangkat Lunak disediakan "SEBAGAIMANA
+ADANYA" tanpa jaminan tersurat maupun tersirat. Pemberi Lisensi tidak menjamin
+Perangkat Lunak selalu bebas kesalahan, tanpa gangguan, atau sesuai untuk tujuan
+tertentu. Pemberi Lisensi tidak bertanggung jawab atas kehilangan data,
+kehilangan keuntungan, kerusakan tidak langsung, atau kerugian akibat penggunaan
+atau ketidakmampuan menggunakan Perangkat Lunak.
+
+7. PENGAKHIRAN
+
+Lisensi ini berakhir otomatis apabila Anda melanggar ketentuan ini. Setelah
+berakhir, Anda wajib menghentikan penggunaan dan menghapus seluruh salinan
+Perangkat Lunak yang berada dalam penguasaan Anda, kecuali penyimpanan diperlukan
+oleh hukum.
+
+8. HUKUM YANG BERLAKU
+
+Lisensi ini diatur oleh hukum Republik Indonesia. Sengketa akan terlebih dahulu
+diselesaikan melalui musyawarah. Apabila tidak tercapai penyelesaian, sengketa
+diselesaikan di pengadilan yang berwenang sesuai domisili Pemberi Lisensi,
+sepanjang diperbolehkan oleh hukum yang berlaku.
+
+9. KETENTUAN UMUM
+
+Jika suatu ketentuan tidak dapat diberlakukan, ketentuan lainnya tetap berlaku.
+Lisensi ini merupakan keseluruhan kesepakatan mengenai Perangkat Lunak, kecuali
+ada perjanjian tertulis lain yang ditandatangani Pemberi Lisensi.
+
+PENTING: Ganti kedua placeholder pada bagian "Pemberi Lisensi" sebelum
+mendistribusikan atau menjual Perangkat Lunak. Dokumen ini adalah template umum
+dan sebaiknya diperiksa oleh penasihat hukum untuk kebutuhan bisnis Anda.
